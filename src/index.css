@@ -1,0 +1,159 @@
+:root {
+  /* Colors */
+  --ink: #111318;
+  --ink-light: #3d4147;
+  --ink-muted: #7c8291;
+  --surface: #f6f7f9;
+  --surface-card: #ffffff;
+  --accent: #e8521f;
+  --accent-hover: #cc4318;
+  --accent-soft: rgba(232, 82, 31, 0.09);
+  --green: #16a34a;
+  --green-soft: rgba(22, 163, 74, 0.1);
+  --orange: #d97706;
+  --orange-soft: rgba(217, 119, 6, 0.1);
+  --red: #dc2626;
+  --red-soft: rgba(220, 38, 38, 0.1);
+  --border: #e4e6eb;
+  --border-strong: #c8ccd4;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.05);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-xl: 0 32px 80px rgba(0,0,0,0.16), 0 8px 24px rgba(0,0,0,0.08);
+
+  /* Shape */
+  --radius: 14px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  /* Typography — Clash Display for headings, Plus Jakarta Sans for body */
+  --font-display: 'Clash Display', 'SF Pro Display', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', 'SF Pro Text', system-ui, sans-serif;
+
+  /* Spacing scale */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+  --space-3xl: 96px;
+
+  /* Transitions */
+  --transition: 0.18s ease;
+  --transition-slow: 0.35s ease;
+
+  /* Max widths */
+  --max-w: 1180px;
+  --max-w-narrow: 760px;
+}
+
+/* ── Reset ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; text-size-adjust: 100%; }
+body {
+  font-family: var(--font-body);
+  background: var(--surface);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+}
+a { text-decoration: none; color: inherit; }
+button { cursor: pointer; font-family: var(--font-body); border: none; background: none; line-height: 1; }
+input, textarea, select {
+  font-family: var(--font-body);
+  font-size: 15px;
+  outline: none;
+  border: none;
+  line-height: 1.5;
+}
+img { display: block; max-width: 100%; height: auto; }
+ul, ol { list-style: none; }
+
+/* ── Typography scale ───────────────────────────────────────── */
+.display-xl {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 6vw, 80px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.0;
+}
+.display-lg {
+  font-family: var(--font-display);
+  font-size: clamp(30px, 4vw, 56px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+}
+.display-md {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 2.5vw, 36px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.display-sm {
+  font-family: var(--font-display);
+  font-size: clamp(16px, 1.5vw, 22px);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.body-lg  { font-size: 17px; line-height: 1.7; }
+.body-md  { font-size: 15px; line-height: 1.65; }
+.body-sm  { font-size: 13px; line-height: 1.55; }
+.body-xs  { font-size: 11px; line-height: 1.5; }
+.label    { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* ── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Animations ─────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* ── Responsive helpers ─────────────────────────────────────── */
+.hide-mobile { display: block; }
+@media (max-width: 640px) {
+  .hide-mobile { display: none !important; }
+  :root { --space-xl: 28px; --space-2xl: 44px; --space-3xl: 64px; }
+}
+
+/* ── Utility ────────────────────────────────────────────────── */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap;
+}
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.clamp-2 {
+  display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
