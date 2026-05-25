@@ -10,10 +10,10 @@ export default function Signin() {
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true); setError('')
-    const result = signin(email, password)
+    const result = await signin(email, password)
     if (result.ok) navigate('/explorer')
     else { setError(result.error); setLoading(false) }
   }
