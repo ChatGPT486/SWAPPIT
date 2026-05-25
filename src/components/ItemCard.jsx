@@ -77,7 +77,7 @@ export default function ItemCard({ item, showActions = false, onSwap, compact = 
             }}>
               {owner.photo
                 ? <img src={owner.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : `${owner.firstName[0]}${owner.lastName[0]}`
+                : `${owner?.firstName?.[0]}${owner?.lastName?.[0]}`
               }
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
