@@ -212,4 +212,90 @@
   font-size: 18px;
   margin-bottom: 15px;
 }
+/* Product details view */
+.product-details {
+  border: 1px solid #ccc;
+  padding: 20px;
+  background: #fff;
+  max-width: 600px;
+  margin: 0 auto; /* centré */
+}
+
+.product-details img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  margin-bottom: 15px;
+  border-radius: 6px;
+}
+
+.product-details h2 {
+  margin: 10px 0;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.product-details p {
+  font-size: 14px;
+  margin: 6px 0;
+  color: #444;
+}
+
+
+/* Seller info */
+.seller-info {
+  margin-top: 15px;
+  padding: 10px;
+  border-top: 1px solid #ddd;
+  font-size: 14px;
+  color: #333;
+}
+
+/* Long buttons */
+.exchange-btn {
+  width: 100%;
+  padding: 14px;
+  background: black;
+  color: white;
+  border: none;
+  cursor: pointer;
+  margin-top: 15px;
+  font-size: 16px;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.exchange-btn:hover {
+  background: #333; /* changement de couleur au hover */
+}
+
+.back-btn {
+  width: 100%;
+  padding: 14px;
+  background: white;
+  color: black;
+  border: 1px solid #000;
+  cursor: pointer;
+  margin-top: 10px;
+  font-size: 16px;
+  border-radius: 6px;
+  transition: background 0.3s, color 0.3s;
+}
+
+.back-btn:hover {
+  background: black;
+  color: white;
+}
+
+/* Similar items section */
+.similar-items {
+  margin-top: 30px;
+}
+
+.similar-items h3 {
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+
 

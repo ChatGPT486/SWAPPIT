@@ -1,4 +1,3 @@
-// UserContext.js
 import React, { createContext, useState } from "react";
 
 export const UserContext = createContext();
@@ -11,11 +10,22 @@ export const UserProvider = ({ children }) => {
     contact: "123456789",
     bio: "Trader on TradeHub",
     photo: "/assets/default-profile.png",
-    products: [] // ✅ global list of products
+    products: [] // ✅ liste globale des produits
   });
 
+  // ✅ fonction pour ajouter un produit avec id auto
+  const addProduct = (newProduct) => {
+    setUser((prev) => ({
+      ...prev,
+      products: [
+        ...prev.products,
+        { ...newProduct, id: Date.now() } // génère un id unique
+      ]
+    }));
+  };
+
   return (
-    <UserContext.Provider value={{ user, setUser }}>
+    <UserContext.Provider value={{ user, setUser, addProduct }}>
       {children}
     </UserContext.Provider>
   );

@@ -1,0 +1,79 @@
+body{
+  background-color:red !important ;
+}
+
+.container {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.header h1 { color: #1a1a1a; margin-bottom: 0.5rem; }
+.header p { color: #666; margin-bottom: 2rem; }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.card {
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eef2f5;
+}
+
+.avatarSection {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.avatarPlaceholder {
+  width: 80px;
+  height: 80px;
+  background: #007bff;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.formGroup { margin-bottom: 1.5rem; }
+.formGroup label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #444; }
+.formGroup input, .formGroup textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-sizing: border-box; /* Important */
+}
+
+.privateTitle { color: #d9534f; }
+.hint { font-size: 0.85rem; color: #888; margin-bottom: 1rem; }
+
+.primaryBtn {
+  background: #007bff;
+  color: white;
+  padding: 0.8rem 2rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 2rem;
+  font-weight: 600;
+}
+
+.secondaryBtn {
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}

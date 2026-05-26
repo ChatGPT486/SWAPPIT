@@ -1,10 +1,9 @@
-// Products.js
 import React, { useContext, useState } from "react";
 import { UserContext } from "./UserContext";
 import "./Products.css";
 
 function Products() {
-  const { user, setUser } = useContext(UserContext);
+  const { user, addProduct } = useContext(UserContext);
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -28,10 +27,7 @@ function Products() {
   };
 
   const handleSubmit = () => {
-    setUser({
-      ...user,
-      products: [...user.products, formData], // ✅ adds product globally
-    });
+    addProduct(formData); // ✅ utilise addProduct qui ajoute un id
     setShowUploadForm(false);
     setFormData({
       name: "",
@@ -65,11 +61,11 @@ function Products() {
         {user.products.length === 0 ? (
           <p>No products uploaded yet.</p>
         ) : (
-          user.products.map((p, i) => (
-            <div key={i} className="product-card">
+          user.products.map((p) => (
+            <div key={p.id} className="product-card">
               {p.image && <img src={p.image} alt={p.name} />}
               <h3>{p.name}</h3>
-              <p>{p.description}</p> {/* ✅ identical to Marketplace */}
+              <p>{p.description}</p>
               <p>{p.category} - {p.subcategory} - {p.condition}</p>
               <p>${p.price}</p>
             </div>

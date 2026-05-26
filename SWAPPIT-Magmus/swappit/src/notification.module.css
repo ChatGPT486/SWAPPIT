@@ -1,0 +1,29 @@
+body{
+  background-color:red !important ;
+}
+
+
+.container { max-width: 600px; margin: 2rem auto; padding: 1rem; }
+
+.notificationList { display: flex; flex-direction: column; gap: 0.8rem; }
+
+.card {
+  display: flex;
+  align-items: center;
+  padding: 1.2rem;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.card:hover { transform: translateX(5px); background: #f9fafb; }
+
+.unread { border-left: 4px solid #2563eb; background: #eff6ff; }
+
+.icon { font-size: 1.5rem; margin-right: 1rem; }
+
+.content p { margin: 0; font-weight: 500; color: #374151; }
+
+.time { font-size: 0.75rem; color: #9ca3af; margin-top: 0.2rem; display: block; }

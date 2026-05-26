@@ -1,4 +1,3 @@
-// App.js
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./Card";
 import Signup from "./Signup";
@@ -7,6 +6,8 @@ import About from "./About";
 import Profile from "./Profile";
 import Products from "./Products";
 import Marketplace from "./Marketplace";
+import ProductDetails from "./ProductDetails";
+import ProposeExchange from "./ProposeExchange";
 import { UserProvider } from "./UserContext";
 
 function App() {
@@ -21,7 +22,8 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/products" element={<Products />} />
           <Route path="/marketplace" element={<Marketplace />} />
-          {/* ✅ redirect unknown paths to Home */}
+          <Route path="/product/:id" element={<ProductDetails />} />   {/* ✅ */}
+          <Route path="/exchange/:id" element={<ProposeExchange />} /> {/* ✅ */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
