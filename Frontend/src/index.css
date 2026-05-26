@@ -1,36 +1,36 @@
 :root {
-  /* Colors */
-  --ink: #111318;
-  --ink-light: #3d4147;
-  --ink-muted: #7c8291;
-  --surface: #f6f7f9;
+  /* Colors - Professional & Modern Palette */
+  --ink: #0f172a;
+  --ink-light: #334155;
+  --ink-muted: #64748b;
+  --surface: #f8fafc;
   --surface-card: #ffffff;
-  --accent: #e8521f;
-  --accent-hover: #cc4318;
-  --accent-soft: rgba(232, 82, 31, 0.09);
-  --green: #16a34a;
-  --green-soft: rgba(22, 163, 74, 0.1);
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.09);
+  --green: #059669;
+  --green-soft: rgba(5, 150, 105, 0.1);
   --orange: #d97706;
   --orange-soft: rgba(217, 119, 6, 0.1);
   --red: #dc2626;
   --red-soft: rgba(220, 38, 38, 0.1);
-  --border: #e4e6eb;
-  --border-strong: #c8ccd4;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.05);
-  --shadow-lg: 0 16px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
-  --shadow-xl: 0 32px 80px rgba(0,0,0,0.16), 0 8px 24px rgba(0,0,0,0.08);
+  /* Shadows - Professional & Subtle */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 4px rgba(15, 23, 42, 0.03);
+  --shadow-md: 0 4px 6px rgba(15, 23, 42, 0.07), 0 2px 4px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 12px 16px rgba(15, 23, 42, 0.1), 0 4px 8px rgba(15, 23, 42, 0.06);
+  --shadow-xl: 0 20px 32px rgba(15, 23, 42, 0.12), 0 8px 16px rgba(15, 23, 42, 0.08);
 
   /* Shape */
-  --radius: 14px;
-  --radius-sm: 8px;
-  --radius-lg: 20px;
+  --radius: 12px;
+  --radius-sm: 6px;
+  --radius-lg: 16px;
   --radius-pill: 999px;
 
-  /* Typography — Clash Display for headings, Plus Jakarta Sans for body */
-  --font-display: 'Clash Display', 'SF Pro Display', system-ui, sans-serif;
+  /* Typography — Plus Jakarta Sans for both headings and body (Professional & Modern) */
+  --font-display: 'Plus Jakarta Sans', 'SF Pro Display', system-ui, sans-serif;
   --font-body: 'Plus Jakarta Sans', 'SF Pro Text', system-ui, sans-serif;
 
   /* Spacing scale */
