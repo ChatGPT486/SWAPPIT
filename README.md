@@ -64,7 +64,7 @@ npm run dev
 | Takam Serge | Full Stack Developer | [@magmus2006](https://github.com/magmus2006) |
 | Obam Banga Samuel | Frontend Developer & Database Engineer | [@obamX](https://github.com/obamX) |
 | Ndongo Pamsy | Frontend Developer | [@ndongopamsy08-hue](https://github.com/ndongopamsy08-hue) |
-| Sniper | Backend Developer | [@Derthgyu](https://github.com/Derthgyu) |
+|Nzeugang Daniel| Backend Developer | [@Derthgyu](https://github.com/Derthgyu) |
 
 ---
 ## 📅 Project Status
