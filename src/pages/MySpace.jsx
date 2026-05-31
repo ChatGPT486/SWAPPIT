@@ -22,6 +22,7 @@ export default function MySpace() {
   const {
     currentUser, updateProfile,
     getMyItems, getMyExchanges, getMyNotifications,
+    loadItems, loadExchanges, loadNotifications,
     addItem, deleteItem, respondExchange,
     markNotifRead, markAllNotifsRead,
     getFairness, getUserById, getItemById, getUnreadCount,
@@ -29,9 +30,15 @@ export default function MySpace() {
   } = useApp()
 
   const tabFromUrl = new URLSearchParams(location.search).get('tab')
-  const [tab, setTab]   = useState(tabFromUrl || 'profile')
+  const [tab, setTab]     = useState(tabFromUrl || 'profile')
   const [toast, setToast] = useState(null)
-  const [reviewTarget, setReviewTarget] = useState(null) // { partner, exchangeId }
+  const [reviewTarget, setReviewTarget] = useState(null)
+
+  useEffect(() => {
+    loadItems()
+    loadExchanges()
+    loadNotifications()
+  }, [])
 
   useEffect(() => { if (tabFromUrl) setTab(tabFromUrl) }, [tabFromUrl])
 
@@ -40,11 +47,13 @@ export default function MySpace() {
   const myNotifs    = getMyNotifications()
   const unread      = getUnreadCount()
 
-  const handleReviewSubmit = (data) => {
-    addReview(data)
+  const handleReviewSubmit = async (data) => {
+    await addReview(data)
     setToast({ message: 'Review submitted! Thank you.', type: 'success' })
     setReviewTarget(null)
   }
+
+  if (!currentUser) return null
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--surface)' }}>
@@ -63,7 +72,7 @@ export default function MySpace() {
             }}>
               {currentUser.photo
                 ? <img src={currentUser.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : `${currentUser.firstName[0]}${currentUser.lastName[0]}`
+                : `${currentUser.firstName?.[0]}${currentUser.lastName?.[0]}`
               }
             </div>
             <div>
@@ -73,13 +82,14 @@ export default function MySpace() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
                 <StarRating value={currentUser.stars || 0} size={13} />
                 <span style={{ fontSize: 12, color: 'var(--ink-muted)' }}>
-                  {currentUser.stars > 0 ? `${currentUser.stars} · ${currentUser.reviewCount} review${currentUser.reviewCount !== 1 ? 's' : ''}` : 'No reviews yet'}
+                  {currentUser.stars > 0
+                    ? `${currentUser.stars} · ${currentUser.reviewCount} review${currentUser.reviewCount !== 1 ? 's' : ''}`
+                    : 'No reviews yet'}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Tabs */}
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{
@@ -111,14 +121,8 @@ export default function MySpace() {
       </div>
 
       {reviewTarget && (
-        <ReviewModal
-          partner={reviewTarget.partner}
-          exchangeId={reviewTarget.exchangeId}
-          onSubmit={handleReviewSubmit}
-          onClose={() => setReviewTarget(null)}
-        />
+        <ReviewModal partner={reviewTarget.partner} exchangeId={reviewTarget.exchangeId} onSubmit={handleReviewSubmit} onClose={() => setReviewTarget(null)} />
       )}
-
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
     </div>
   )
@@ -127,47 +131,102 @@ export default function MySpace() {
 // ── Profile Tab ────────────────────────────────────────────────────────────────
 function ProfileTab({ user, onUpdate, onToast, getUserReviews, getUserById }) {
   const [editing, setEditing] = useState(false)
-  const [form, setForm] = useState({ firstName: user.firstName, lastName: user.lastName, bio: user.bio, contact: user.contact })
-  const photoRef = useRef()
+  const [form, setForm]       = useState({ firstName: user.firstName, lastName: user.lastName, bio: user.bio || '', contact: user.contact || '' })
+  const [myReviews, setMyReviews] = useState([])
+  const [photoPreview, setPhotoPreview] = useState(user.photo || null)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [photoDragOver, setPhotoDragOver]   = useState(false)
+  const photoInputRef = useRef()
 
-  const handleSave = () => { onUpdate(form); setEditing(false); onToast({ message: 'Profile updated!', type: 'success' }) }
-  const handlePhotoChange = (e) => {
-    const file = e.target.files[0]
-    if (file) onUpdate({ photo: URL.createObjectURL(file) })
+  useEffect(() => {
+    getUserReviews(user.id)
+      .then(data => setMyReviews(Array.isArray(data) ? data : []))
+      .catch(() => setMyReviews([]))
+  }, [user.id])
+
+  const handleSave = async () => {
+    await onUpdate(form)
+    setEditing(false)
+    onToast({ message: 'Profile updated!', type: 'success' })
   }
 
-  const myReviews = getUserReviews(user.id)
+  // ── Gestion photo de profil — drag & drop + click ──────────────────────────
+  const handlePhotoFile = async (file) => {
+    if (!file || !file.type.startsWith('image/')) return
+    setPhotoPreview(URL.createObjectURL(file))
+    setUploadingPhoto(true)
+    try {
+      await onUpdate({ photo: file })
+      onToast({ message: 'Profile photo updated!', type: 'success' })
+    } catch {
+      onToast({ message: 'Failed to upload photo.', type: 'error' })
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, alignItems: 'start' }}>
-      {/* Left: info */}
+
+      {/* Left */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <Card title="Public Profile">
-          {/* Avatar with upload */}
+
+          {/* ── Avatar upload zone ─────────────────────────────────────────── */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
-            <div style={{ position: 'relative', marginBottom: 12 }}>
+
+            {/* Zone drag & drop pour la photo de profil */}
+            <div
+              onDrop={e => { e.preventDefault(); setPhotoDragOver(false); handlePhotoFile(e.dataTransfer.files[0]) }}
+              onDragOver={e => { e.preventDefault(); setPhotoDragOver(true) }}
+              onDragLeave={() => setPhotoDragOver(false)}
+              onClick={() => photoInputRef.current?.click()}
+              style={{
+                position: 'relative', marginBottom: 12, cursor: 'pointer',
+                borderRadius: '50%',
+                outline: photoDragOver ? '3px dashed var(--accent)' : '3px dashed transparent',
+                outlineOffset: 3,
+                transition: 'outline var(--transition)',
+              }}
+              title="Click or drag a photo to change your avatar"
+            >
               <div style={{
-                width: 80, height: 80, borderRadius: '50%',
+                width: 88, height: 88, borderRadius: '50%',
                 background: 'var(--accent)', color: '#fff',
-                fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 26,
+                fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 28,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 overflow: 'hidden', border: '3px solid var(--border)',
+                opacity: uploadingPhoto ? 0.6 : 1,
+                transition: 'opacity var(--transition)',
               }}>
-                {user.photo
-                  ? <img src={user.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : `${user.firstName[0]}${user.lastName[0]}`
+                {photoPreview
+                  ? <img src={photoPreview} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : `${user.firstName?.[0]}${user.lastName?.[0]}`
                 }
               </div>
-              <button onClick={() => photoRef.current?.click()} style={{
-                position: 'absolute', bottom: 0, right: -2,
+
+              {/* Badge caméra */}
+              <div style={{
+                position: 'absolute', bottom: 2, right: 2,
                 width: 26, height: 26, borderRadius: '50%',
-                background: 'var(--ink)', color: '#fff',
-                fontSize: 12, border: '2px solid #fff',
+                background: uploadingPhoto ? 'var(--border)' : 'var(--ink)',
+                color: '#fff', fontSize: 12, border: '2px solid #fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>✎</button>
-              <input ref={photoRef} type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
+                transition: 'background var(--transition)',
+              }}>
+                {uploadingPhoto ? '…' : '📷'}
+              </div>
             </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 17 }}>{user.firstName} {user.lastName}</div>
+            <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+              onChange={e => handlePhotoFile(e.target.files[0])} />
+
+            <p style={{ fontSize: 11, color: 'var(--ink-muted)', marginBottom: 6 }}>
+              Click or drag a photo to change
+            </p>
+
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 17 }}>
+              {user.firstName} {user.lastName}
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
               <StarRating value={user.stars || 0} size={15} />
               <span style={{ fontSize: 13, color: 'var(--ink-muted)' }}>{user.stars > 0 ? user.stars : 'New'}</span>
@@ -199,7 +258,9 @@ function ProfileTab({ user, onUpdate, onToast, getUserReviews, getUserById }) {
             ? <PField label="Contact number" value={form.contact} onChange={v => setForm(f => ({...f, contact: v}))} />
             : <>
                 <InfoRow label="Email">{user.email}</InfoRow>
-                <InfoRow label="Contact" style={{ marginTop: 12 }}>{user.contact || <span style={{ color: 'var(--ink-muted)' }}>Not set</span>}</InfoRow>
+                <div style={{ marginTop: 12 }}>
+                  <InfoRow label="Contact">{user.contact || <span style={{ color: 'var(--ink-muted)' }}>Not set</span>}</InfoRow>
+                </div>
               </>
           }
         </Card>
@@ -214,28 +275,30 @@ function ProfileTab({ user, onUpdate, onToast, getUserReviews, getUserById }) {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {myReviews.map(r => {
-              const author = getUserById(r.authorId)
-              return (
-                <div key={r.id} style={{ padding: '14px 16px', borderRadius: 10, background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{
-                        width: 30, height: 30, borderRadius: '50%', background: 'var(--accent)', color: '#fff',
-                        fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 11,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0,
-                      }}>
-                        {author?.photo ? <img src={author.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : `${author?.firstName?.[0]}${author?.lastName?.[0]}`}
-                      </div>
-                      <span style={{ fontWeight: 600, fontSize: 13 }}>{author?.firstName} {author?.lastName}</span>
+            {myReviews.map(r => (
+              <div key={r.id} style={{ padding: '14px 16px', borderRadius: 10, background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                      width: 30, height: 30, borderRadius: '50%', background: 'var(--accent)', color: '#fff',
+                      fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 11,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0,
+                    }}>
+                      {r.author?.photo
+                        ? <img src={r.author.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : `${r.author?.firstName?.[0] || '?'}${r.author?.lastName?.[0] || ''}`
+                      }
                     </div>
-                    <StarRating value={r.stars} size={13} />
+                    <span style={{ fontWeight: 600, fontSize: 13 }}>{r.author?.firstName} {r.author?.lastName}</span>
                   </div>
-                  {r.comment && <p style={{ fontSize: 13, color: 'var(--ink-muted)', lineHeight: 1.55 }}>"{r.comment}"</p>}
-                  <div style={{ fontSize: 11, color: 'var(--ink-muted)', marginTop: 6 }}>{r.createdAt}</div>
+                  <StarRating value={r.stars} size={13} />
                 </div>
-              )
-            })}
+                {r.comment && <p style={{ fontSize: 13, color: 'var(--ink-muted)', lineHeight: 1.55 }}>"{r.comment}"</p>}
+                <div style={{ fontSize: 11, color: 'var(--ink-muted)', marginTop: 6 }}>
+                  {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : ''}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </Card>
@@ -246,26 +309,45 @@ function ProfileTab({ user, onUpdate, onToast, getUserReviews, getUserById }) {
 // ── Products Tab ───────────────────────────────────────────────────────────────
 function ProductsTab({ items, onAdd, onDelete, onToast }) {
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: '', description: '', category: 'Electronics', condition: 'Good', value: '', image: null })
-  const [preview, setPreview] = useState(null)
+  const [form, setForm]         = useState({ name: '', description: '', category: 'Electronics', condition: 'Good', value: '', image: null })
+  const [preview, setPreview]   = useState(null)
   const [dragOver, setDragOver] = useState(false)
+  const [loading, setLoading]   = useState(false)
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
+  // ── Gère le fichier image — stocke le File réel pour l'upload API ──────────
   const handleImageFile = (file) => {
     if (!file || !file.type.startsWith('image/')) return
-    const url = URL.createObjectURL(file)
-    setPreview(url)
-    setForm(f => ({ ...f, image: url }))
+    setPreview(URL.createObjectURL(file))
+    setForm(f => ({ ...f, image: file }))
   }
 
-  const handleSubmit = () => {
-    if (!form.name || !form.value) { onToast({ message: 'Name and value are required.', type: 'error' }); return }
-    onAdd({ ...form, value: parseFloat(form.value), emoji: EMOJIS[form.category] || '📦' })
-    setForm({ name: '', description: '', category: 'Electronics', condition: 'Good', value: '', image: null })
-    setPreview(null)
-    setShowForm(false)
-    onToast({ message: 'Item added to the marketplace! 🎉', type: 'success' })
+  const handleSubmit = async () => {
+    if (!form.name || !form.value) {
+      onToast({ message: 'Name and value are required.', type: 'error' })
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await onAdd({
+        ...form,
+        value: parseFloat(form.value),
+        emoji: EMOJIS[form.category] || '📦',
+      })
+      if (res?.ok !== false) {
+        setForm({ name: '', description: '', category: 'Electronics', condition: 'Good', value: '', image: null })
+        setPreview(null)
+        setShowForm(false)
+        onToast({ message: 'Item added to the marketplace! 🎉', type: 'success' })
+      } else {
+        onToast({ message: res?.error || 'Failed to add item.', type: 'error' })
+      }
+    } catch {
+      onToast({ message: 'Network error. Try again.', type: 'error' })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -292,7 +374,7 @@ function ProductsTab({ items, onAdd, onDelete, onToast }) {
         <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 24, marginBottom: 28, animation: 'scaleIn 0.2s ease' }}>
           <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, marginBottom: 20 }}>Post a New Item</h3>
 
-          {/* Image upload */}
+          {/* ── Zone image — drag & drop + click + preview ─────────────────── */}
           <div style={{ marginBottom: 20 }}>
             <label style={lbl}>Item Photo</label>
             <div
@@ -306,7 +388,7 @@ function ProductsTab({ items, onAdd, onDelete, onToast }) {
                 textAlign: 'center', cursor: 'pointer',
                 background: dragOver ? 'var(--accent-soft)' : 'var(--surface)',
                 transition: 'all var(--transition)',
-                minHeight: preview ? 'auto' : 120,
+                minHeight: preview ? 'auto' : 130,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}
             >
@@ -320,12 +402,13 @@ function ProductsTab({ items, onAdd, onDelete, onToast }) {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     border: '2px solid #fff',
                   }}>✕</button>
+                  <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ink-muted)' }}>Click to change photo</div>
                 </div>
               ) : (
                 <>
-                  <div style={{ fontSize: 32 }}>📷</div>
-                  <div style={{ fontSize: 13, color: 'var(--ink-muted)', fontWeight: 500 }}>Click to upload or drag & drop</div>
-                  <div style={{ fontSize: 11, color: 'var(--ink-muted)' }}>PNG, JPG, WEBP up to 10MB</div>
+                  <div style={{ fontSize: 36 }}>📷</div>
+                  <div style={{ fontSize: 14, color: 'var(--ink-muted)', fontWeight: 600 }}>Click to upload or drag & drop</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-muted)', opacity: 0.7 }}>PNG, JPG, WEBP — max 10MB</div>
                 </>
               )}
             </div>
@@ -333,7 +416,7 @@ function ProductsTab({ items, onAdd, onDelete, onToast }) {
               onChange={e => handleImageFile(e.target.files[0])} />
           </div>
 
-          {/* AI Value Estimator — shows after name is typed */}
+          {/* AI Value Estimator */}
           <AIValueEstimator
             itemName={form.name}
             description={form.description}
@@ -342,8 +425,8 @@ function ProductsTab({ items, onAdd, onDelete, onToast }) {
           />
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
-            <FField label="Item Name *"       name="name"      value={form.name}      onChange={handleChange} />
-            <FField label="Value (FCFA) *"    name="value"     value={form.value}     onChange={handleChange} type="number" />
+            <FField label="Item Name *"    name="name"  value={form.name}  onChange={handleChange} />
+            <FField label="Value (FCFA) *" name="value" value={form.value} onChange={handleChange} type="number" />
             <div>
               <label style={lbl}>Category</label>
               <select name="category" value={form.category} onChange={handleChange} style={sel}>
@@ -357,15 +440,26 @@ function ProductsTab({ items, onAdd, onDelete, onToast }) {
               </select>
             </div>
           </div>
+
           <div style={{ marginTop: 14 }}>
             <label style={lbl}>Description</label>
             <textarea name="description" value={form.description} onChange={handleChange}
               rows={3} placeholder="Describe your item — condition details, included accessories, reason for swapping…"
               style={{ ...inp, resize: 'vertical' }} />
           </div>
+
           <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-            <Btn onClick={handleSubmit}>Post Item →</Btn>
-            <Btn onClick={() => setShowForm(false)} secondary>Cancel</Btn>
+            <button onClick={handleSubmit} disabled={loading} style={{
+              padding: '10px 20px', borderRadius: 8,
+              background: loading ? 'var(--border)' : 'var(--ink)',
+              color: loading ? 'var(--ink-muted)' : '#fff',
+              fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13,
+              transition: 'all var(--transition)',
+            }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.background = 'var(--accent)' }}
+              onMouseLeave={e => { if (!loading) e.currentTarget.style.background = 'var(--ink)' }}
+            >{loading ? 'Posting…' : 'Post Item →'}</button>
+            <Btn onClick={() => { setShowForm(false); setPreview(null) }} secondary>Cancel</Btn>
           </div>
         </div>
       )}
@@ -383,8 +477,7 @@ function ProductsTab({ items, onAdd, onDelete, onToast }) {
                 background: 'rgba(255,255,255,0.95)', color: 'var(--red)',
                 fontSize: 13, border: '1px solid var(--border)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all var(--transition)',
-                boxShadow: 'var(--shadow-sm)',
+                transition: 'all var(--transition)', boxShadow: 'var(--shadow-sm)',
               }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'var(--red)'; e.currentTarget.style.color = '#fff' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.95)'; e.currentTarget.style.color = 'var(--red)' }}
@@ -399,13 +492,21 @@ function ProductsTab({ items, onAdd, onDelete, onToast }) {
 
 // ── Exchanges Tab ──────────────────────────────────────────────────────────────
 function ExchangesTab({ exchanges, currentUser, onRespond, getFairness, getUserById, getItemById, onToast, canReviewExchange, getReviewPartner, onReview }) {
-  const [filter, setFilter] = useState('all')
+  const [filter, setFilter]       = useState('all')
+  const [responding, setResponding] = useState(null)
 
   const filtered = exchanges.filter(ex => filter === 'all' || ex.status === filter)
-  const counts = { all: exchanges.length, pending: exchanges.filter(e=>e.status==='pending').length, accepted: exchanges.filter(e=>e.status==='accepted').length, rejected: exchanges.filter(e=>e.status==='rejected').length }
+  const counts = {
+    all:      exchanges.length,
+    pending:  exchanges.filter(e => e.status === 'pending').length,
+    accepted: exchanges.filter(e => e.status === 'accepted').length,
+    rejected: exchanges.filter(e => e.status === 'rejected').length,
+  }
 
-  const handleRespond = (exId, accepted) => {
-    onRespond(exId, accepted)
+  const handleRespond = async (exId, accepted) => {
+    setResponding(exId)
+    await onRespond(exId, accepted)
+    setResponding(null)
     onToast({ message: accepted ? '✅ Exchange accepted! Contacts have been shared.' : 'Exchange declined.', type: accepted ? 'success' : 'info' })
   }
 
@@ -430,13 +531,13 @@ function ExchangesTab({ exchanges, currentUser, onRespond, getFairness, getUserB
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {filtered.map(ex => {
-            const isOwner = ex.ownerId === currentUser.id
-            const other   = getUserById(isOwner ? ex.proposerId : ex.ownerId)
-            const offered = getItemById(ex.offeredItemId)
-            const requested = getItemById(ex.requestedItemId)
-            const fairness = getFairness(offered?.value, requested?.value)
+            const isOwner   = ex.ownerId === currentUser.id
+            const other     = isOwner ? ex.proposer : ex.owner
+            const offered   = ex.offeredItem
+            const requested = ex.requestedItem
+            const fairness  = getFairness(offered?.value, requested?.value)
             const canReview = canReviewExchange(ex.id)
-            const partner = getReviewPartner(ex.id)
+            const partner   = getReviewPartner(ex.id)
 
             const statusStyle = {
               pending:  { color: 'var(--orange)', bg: 'var(--orange-soft)' },
@@ -451,9 +552,11 @@ function ExchangesTab({ exchanges, currentUser, onRespond, getFairness, getUserB
                     <div style={{ fontWeight: 600, fontSize: 14 }}>
                       {isOwner ? `${other?.firstName} wants to swap with you` : `Your proposal to ${other?.firstName}`}
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 2 }}>{ex.createdAt}</div>
+                    <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 2 }}>
+                      {ex.createdAt ? new Date(ex.createdAt).toLocaleDateString() : ''}
+                    </div>
                   </div>
-                  <span style={{ padding: '4px 12px', borderRadius: 'var(--radius-pill)', fontSize: 11, fontWeight: 700, ...statusStyle }}>
+                  <span style={{ padding: '4px 12px', borderRadius: 'var(--radius-pill)', fontSize: 11, fontWeight: 700, color: statusStyle?.color, background: statusStyle?.bg }}>
                     {ex.status.toUpperCase()}
                   </span>
                 </div>
@@ -471,14 +574,11 @@ function ExchangesTab({ exchanges, currentUser, onRespond, getFairness, getUserB
 
                 {isOwner && ex.status === 'pending' && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                    <button onClick={() => handleRespond(ex.id, true)} style={{
+                    <button onClick={() => handleRespond(ex.id, true)} disabled={responding === ex.id} style={{
                       padding: '9px 18px', borderRadius: 8, background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 13,
-                      transition: 'opacity var(--transition)',
-                    }}
-                      onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-                      onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                    >✓ Accept & Share Contacts</button>
-                    <button onClick={() => handleRespond(ex.id, false)} style={{
+                      opacity: responding === ex.id ? 0.6 : 1, transition: 'opacity var(--transition)',
+                    }}>✓ Accept & Share Contacts</button>
+                    <button onClick={() => handleRespond(ex.id, false)} disabled={responding === ex.id} style={{
                       padding: '9px 18px', borderRadius: 8, border: '1.5px solid var(--red)', color: 'var(--red)', fontWeight: 700, fontSize: 13,
                       transition: 'all var(--transition)',
                     }}
