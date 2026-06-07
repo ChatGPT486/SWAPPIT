@@ -7,6 +7,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { api, tokens } from '../config/api'
+import supabase from '../lib/supabase'
 
 const AppContext = createContext(null)
 

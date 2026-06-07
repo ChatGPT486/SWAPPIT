@@ -271,23 +271,41 @@ function ProfileTab({ user, onUpdate, onToast, getUserReviews, getUserById }) {
 // ── Products Tab ───────────────────────────────────────────────────────────────
 function ProductsTab({ items, onAdd, onDelete, onToast }) {
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm]   = useState({ name: '', description: '', category: 'Electronics', condition: 'Good', value: '', image: null })
-  const [preview, setPreview] = useState(null)
-  const [dragOver, setDragOver] = useState(false)
+  const [form, setForm]     = useState({ name: '', description: '', category: 'Electronics', condition: 'Good', value: '' })
+  const [imageFile, setImageFile] = useState(null)  // actual File object for upload
+  const [preview,   setPreview]   = useState(null)  // blob URL for preview only
+  const [dragOver,  setDragOver]  = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
+
   const handleImageFile = (file) => {
     if (!file || !file.type.startsWith('image/')) return
-    const url = URL.createObjectURL(file)
-    setPreview(url)
-    setForm(f => ({ ...f, image: url }))
+    // Store the real File object for upload, and a blob URL just for preview
+    setImageFile(file)
+    setPreview(URL.createObjectURL(file))
   }
-  const handleSubmit = () => {
+
+  const handleSubmit = async () => {
     if (!form.name || !form.value) { onToast({ message: 'Name and value are required.', type: 'error' }); return }
-    onAdd({ ...form, value: parseFloat(form.value), emoji: EMOJIS[form.category] || '📦' })
-    setForm({ name: '', description: '', category: 'Electronics', condition: 'Good', value: '', image: null })
-    setPreview(null); setShowForm(false)
-    onToast({ message: 'Item added to the marketplace! 🎉', type: 'success' })
+    setUploading(true)
+    try {
+      await onAdd({
+        ...form,
+        value:     parseFloat(form.value),
+        emoji:     EMOJIS[form.category] || '📦',
+        imageFile: imageFile,  // pass the real File object — AppContext uploads it to Supabase
+      })
+      setForm({ name: '', description: '', category: 'Electronics', condition: 'Good', value: '' })
+      setImageFile(null)
+      setPreview(null)
+      setShowForm(false)
+      onToast({ message: 'Item added to the marketplace! 🎉', type: 'success' })
+    } catch (err) {
+      onToast({ message: err.message || 'Failed to add item.', type: 'error' })
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
@@ -333,7 +351,7 @@ function ProductsTab({ items, onAdd, onDelete, onToast }) {
               {preview ? (
                 <div style={{ position: 'relative', display: 'inline-block' }}>
                   <img src={preview} alt="preview" style={{ maxHeight: 180, maxWidth: '100%', borderRadius: 10, display: 'block' }} />
-                  <button onClick={e => { e.stopPropagation(); setPreview(null); setForm(f => ({...f, image: null})) }} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: 'var(--error)', color: '#fff', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff', cursor: 'pointer' }}>✕</button>
+                  <button onClick={e => { e.stopPropagation(); setPreview(null); setImageFile(null) }} style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: 'var(--error)', color: '#fff', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff', cursor: 'pointer' }}>✕</button>
                 </div>
               ) : (
                 <>
@@ -365,8 +383,10 @@ function ProductsTab({ items, onAdd, onDelete, onToast }) {
             <textarea name="description" value={form.description} onChange={handleChange} rows={3} placeholder="Describe your item…" style={{ ...Inp, resize: 'vertical' }} />
           </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-            <SBtn onClick={handleSubmit}>Post Item →</SBtn>
-            <SBtn onClick={() => setShowForm(false)} secondary>Cancel</SBtn>
+            <SBtn onClick={handleSubmit} disabled={uploading}>
+              {uploading ? '⏳ Uploading…' : 'Post Item →'}
+            </SBtn>
+            <SBtn onClick={() => setShowForm(false)} secondary disabled={uploading}>Cancel</SBtn>
           </div>
         </div>
       )}
@@ -706,11 +726,20 @@ function FField({ label, name, type = 'text', value, onChange }) {
   )
 }
 
-function SBtn({ children, onClick, secondary }) {
+function SBtn({ children, onClick, secondary, disabled }) {
   return (
-    <button onClick={onClick} style={{ padding: '10px 20px', borderRadius: 'var(--radius-sm)', background: secondary ? 'transparent' : 'var(--ink)', color: secondary ? 'var(--muted)' : 'var(--lime)', border: secondary ? '1.5px solid var(--border-md)' : 'none', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, transition: 'all 0.2s var(--ease)', cursor: 'pointer' }}
-      onMouseEnter={e => { if (!secondary) e.currentTarget.style.opacity='0.88'; else { e.currentTarget.style.borderColor='var(--ink)'; e.currentTarget.style.color='var(--ink)' } }}
-      onMouseLeave={e => { if (!secondary) e.currentTarget.style.opacity='1'; else { e.currentTarget.style.borderColor='var(--border-md)'; e.currentTarget.style.color='var(--muted)' } }}
+    <button onClick={onClick} disabled={disabled} style={{
+      padding: '10px 20px', borderRadius: 'var(--radius-sm)',
+      background: secondary ? 'transparent' : 'var(--ink)',
+      color: secondary ? 'var(--muted)' : 'var(--lime)',
+      border: secondary ? '1.5px solid var(--border-md)' : 'none',
+      fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13,
+      transition: 'all 0.2s var(--ease)',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      opacity: disabled ? 0.5 : 1,
+    }}
+      onMouseEnter={e => { if (!secondary && !disabled) e.currentTarget.style.opacity='0.88'; else if (!disabled) { e.currentTarget.style.borderColor='var(--ink)'; e.currentTarget.style.color='var(--ink)' } }}
+      onMouseLeave={e => { if (!secondary && !disabled) e.currentTarget.style.opacity='1'; else if (!disabled) { e.currentTarget.style.borderColor='var(--border-md)'; e.currentTarget.style.color='var(--muted)' } }}
     >{children}</button>
   )
 }

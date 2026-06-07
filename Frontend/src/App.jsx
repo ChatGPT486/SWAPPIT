@@ -21,6 +21,7 @@ export default function App() {
           <Route path="/explorer" element={<ProtectedRoute><Explorer /></ProtectedRoute>} />
           <Route path="/my-space" element={<ProtectedRoute><MySpace /></ProtectedRoute>} />
           <Route path="/item/:id" element={<ProtectedRoute><ItemDetail /></ProtectedRoute>} />
+          <Route path="/user/:id"  element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
           <Route path="*"         element={<Navigate to="/" />} />
         </Routes>
       </Router>
