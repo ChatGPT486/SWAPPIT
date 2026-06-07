@@ -5,31 +5,30 @@ import ItemCard from '../components/ItemCard'
 import SwapModal from '../components/SwapModal'
 import Toast from '../components/Toast'
 import { AISwapAssistant } from '../components/AIAssistant'
+import LiveMap from '../components/LiveMap'
 
 const CATS = ['All','Electronics','Clothing','Furniture','Books','Music','Sports','Other']
 
 export default function Explorer() {
   const { items, getSuggestions, currentUser } = useApp()
-  const [search, setSearch]         = useState('')
-  const [cat, setCat]               = useState('All')
-  const [sort, setSort]             = useState('recent')
-  const [swapTarget, setSwapTarget] = useState(null)
-  const [toast, setToast]           = useState(null)
-  const [showSugg, setShowSugg]     = useState(false)
-
-  // FIX: getSuggestions is async — fetch into state, don't call inline
+  const [search,      setSearch]      = useState('')
+  const [cat,         setCat]         = useState('All')
+  const [sort,        setSort]        = useState('recent')
+  const [swapTarget,  setSwapTarget]  = useState(null)
+  const [toast,       setToast]       = useState(null)
+  const [showSugg,    setShowSugg]    = useState(false)
+  const [showMap,     setShowMap]     = useState(false)
   const [suggestions, setSuggestions] = useState([])
+
   useEffect(() => {
     getSuggestions().then(setSuggestions).catch(() => setSuggestions([]))
   }, [])
 
-  // FIX: Django returns item.owner as nested object {id, first_name...}
-  // So we compare item.owner.id (or item.owner_id) instead of item.userId
   const filtered = items
     .filter(item => {
       const ownerId = item.owner?.id ?? item.owner_id ?? item.userId
-      if (ownerId === currentUser?.id) return false        // hide own items
-      const available = item.available !== false && item.is_available !== false
+      if (ownerId === currentUser?.id) return false
+      const available = item.available !== false && item.isAvailable !== false
       if (!available) return false
       const ms = search
         ? (item.name + ' ' + (item.description || '')).toLowerCase().includes(search.toLowerCase())
@@ -44,7 +43,7 @@ export default function Explorer() {
       return 0
     })
 
-  const available = items.filter(i => i.available !== false && i.is_available !== false).length
+  const available = items.filter(i => i.available !== false && i.isAvailable !== false).length
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--surface)' }}>
@@ -63,20 +62,33 @@ export default function Explorer() {
                 {available} items available for swap
               </p>
             </div>
-            {suggestions.length > 0 && (
-              <button onClick={() => setShowSugg(s => !s)} style={{
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {/* Live Map toggle */}
+              <button onClick={() => setShowMap(s => !s)} style={{
                 padding: '10px 18px', borderRadius: 'var(--radius-pill)',
-                background: showSugg ? 'var(--ink)' : 'transparent',
-                color: showSugg ? 'var(--lime)' : 'var(--ink)',
+                background: showMap ? 'var(--ink)' : 'transparent',
+                color: showMap ? 'var(--lime)' : 'var(--ink)',
                 fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 12,
                 display: 'flex', alignItems: 'center', gap: 7,
-                border: showSugg ? 'none' : '1.5px solid var(--border-md)',
-                transition: 'all 0.2s var(--ease)',
-                cursor: 'pointer',
+                border: showMap ? 'none' : '1.5px solid var(--border-md)',
+                transition: 'all 0.2s var(--ease)', cursor: 'pointer',
               }}>
-                💡 {suggestions.length} Smart Suggestions
+                🌍 {showMap ? 'Hide Live Map' : 'Show Live Map'}
               </button>
-            )}
+              {suggestions.length > 0 && (
+                <button onClick={() => setShowSugg(s => !s)} style={{
+                  padding: '10px 18px', borderRadius: 'var(--radius-pill)',
+                  background: showSugg ? 'var(--ink)' : 'transparent',
+                  color: showSugg ? 'var(--lime)' : 'var(--ink)',
+                  fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 12,
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  border: showSugg ? 'none' : '1.5px solid var(--border-md)',
+                  transition: 'all 0.2s var(--ease)', cursor: 'pointer',
+                }}>
+                  💡 {suggestions.length} Smart Suggestions
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Filter bar */}
@@ -86,22 +98,12 @@ export default function Explorer() {
               <input
                 value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search items…"
-                style={{
-                  width: '100%', padding: '10px 14px 10px 36px',
-                  borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border-md)',
-                  background: 'var(--surface)', fontSize: 14, color: 'var(--ink)',
-                  fontFamily: 'var(--font-body)', transition: 'border-color 0.2s',
-                }}
+                style={{ width: '100%', padding: '10px 14px 10px 36px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border-md)', background: 'var(--surface)', fontSize: 14, color: 'var(--ink)', fontFamily: 'var(--font-body)', transition: 'border-color 0.2s' }}
                 onFocus={e => e.target.style.borderColor = 'var(--ink)'}
                 onBlur={e => e.target.style.borderColor = 'var(--border-md)'}
               />
             </div>
-            <select value={sort} onChange={e => setSort(e.target.value)} style={{
-              padding: '10px 14px', borderRadius: 'var(--radius-sm)',
-              border: '1.5px solid var(--border-md)', background: 'var(--surface)',
-              fontSize: 13, color: 'var(--ink)', cursor: 'pointer',
-              fontFamily: 'var(--font-display)', fontWeight: 600,
-            }}>
+            <select value={sort} onChange={e => setSort(e.target.value)} style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border-md)', background: 'var(--surface)', fontSize: 13, color: 'var(--ink)', cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 600 }}>
               <option value="recent">Most Recent</option>
               <option value="value-asc">Value: Low → High</option>
               <option value="value-desc">Value: High → Low</option>
@@ -119,12 +121,16 @@ export default function Explorer() {
 
       <div style={{ maxWidth: 'var(--max-w)', margin: '0 auto', padding: '28px 5%' }}>
 
+        {/* Live Map */}
+        {showMap && (
+          <div style={{ marginBottom: 28, animation: 'scaleIn 0.25s var(--ease)' }}>
+            <LiveMap />
+          </div>
+        )}
+
         {/* Smart Suggestions */}
         {showSugg && suggestions.length > 0 && (
-          <div style={{
-            background: 'var(--ink)', borderRadius: 'var(--radius)', padding: 'clamp(18px,3vw,28px)',
-            marginBottom: 28, animation: 'scaleIn 0.2s var(--ease)',
-          }}>
+          <div style={{ background: 'var(--ink)', borderRadius: 'var(--radius)', padding: 'clamp(18px,3vw,28px)', marginBottom: 28, animation: 'scaleIn 0.2s var(--ease)' }}>
             <div style={{ marginBottom: 18 }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: 'var(--lime)', marginBottom: 4 }}>💡 Suggested for You</h2>
               <p style={{ fontSize: 12, color: 'rgba(245,244,240,0.45)' }}>Best value-matched swaps based on your items</p>
@@ -137,7 +143,7 @@ export default function Explorer() {
           </div>
         )}
 
-        {/* Grid */}
+        {/* Item Grid */}
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
@@ -169,11 +175,9 @@ export default function Explorer() {
 }
 
 function SuggCard({ s, onSwap }) {
-  // FIX: API returns snake_case keys (my_item / their_item)
   const myItem    = s.my_item    || s.myItem
   const theirItem = s.their_item || s.theirItem
   const fairness  = s.fairness   || {}
-
   const fairnessStyle = {
     balanced:   { color: '#059669', bg: 'rgba(16,185,129,0.12)' },
     acceptable: { color: '#d97706', bg: 'rgba(245,158,11,0.12)' },
@@ -191,12 +195,7 @@ function SuggCard({ s, onSwap }) {
         <span style={{ padding: '4px 10px', borderRadius: 'var(--radius-pill)', background: fairnessStyle.bg, color: fairnessStyle.color, fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-display)' }}>
           {fairness.label || 'Match'}
         </span>
-        <button onClick={onSwap} style={{
-          padding: '7px 14px', borderRadius: 'var(--radius-pill)',
-          background: 'var(--lime)', color: 'var(--ink)',
-          fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-display)', border: 'none', cursor: 'pointer',
-          transition: 'transform 0.2s var(--ease-spring)',
-        }}
+        <button onClick={onSwap} style={{ padding: '7px 14px', borderRadius: 'var(--radius-pill)', background: 'var(--lime)', color: 'var(--ink)', fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-display)', border: 'none', cursor: 'pointer', transition: 'transform 0.2s var(--ease-spring)' }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
         >Propose Swap</button>
@@ -210,12 +209,8 @@ function ItemChip({ item }) {
   return (
     <div style={{ flex: 1, padding: '8px 10px', background: 'rgba(245,244,240,0.06)', borderRadius: 8 }}>
       <div style={{ fontSize: 16, marginBottom: 4 }}>{item.emoji || '📦'}</div>
-      <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 11, lineHeight: 1.2, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {item.name}
-      </div>
-      <div style={{ fontSize: 11, color: 'var(--lime)', fontWeight: 700 }}>
-        {Number(item.value).toLocaleString()} F
-      </div>
+      <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 11, lineHeight: 1.2, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+      <div style={{ fontSize: 11, color: 'var(--lime)', fontWeight: 700 }}>{Number(item.value).toLocaleString()} F</div>
     </div>
   )
 }
