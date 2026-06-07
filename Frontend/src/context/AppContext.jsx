@@ -166,15 +166,36 @@ export function AppProvider({ children }) {
 
   // ── Items ──────────────────────────────────────────────────────────────────
   const addItem = async (itemData) => {
+    // Step 1: Upload image to Supabase Storage if a real File was provided
+    let imageUrl = ''
+    if (itemData.imageFile instanceof File && supabase.isConfigured()) {
+      const url = await supabase.uploadItemImage(itemData.imageFile, currentUser?.id)
+      if (url) imageUrl = url
+    }
+
+    // Step 2: Create item in Django — send public image URL (string)
     const created = await api.createItem({
       name:        itemData.name,
       description: itemData.description || '',
       category:    itemData.category    || 'General',
       condition:   itemData.condition   || 'Good',
       value:       Number(itemData.value) || 0,
+      image:       imageUrl,
     })
     const norm = normalizeItem(created)
+
+    // Step 3: Add to myItems immediately
     setMyItems(prev => [norm, ...prev])
+
+    // Step 4: CRITICAL — refresh the Explorer items list so others can see it
+    // We re-fetch all items (excluding own) to update the Explorer grid
+    try {
+      const allItems = await api.getItems({ exclude_own: true })
+      setItems(unwrap(allItems).map(normalizeItem))
+    } catch (e) {
+      console.warn('Could not refresh explorer items:', e)
+    }
+
     return norm
   }
 

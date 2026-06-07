@@ -53,7 +53,7 @@ class SupabaseClient {
   // ── user_locations table helpers ─────────────────────────────────────────
 
   /** Upsert my location into user_locations table */
-  async upsertLocation({ userId, email, firstName, latitude, longitude }) {
+  async upsertLocation({ userId, email, firstName, latitude, longitude, accuracy = 0, address = '' }) {
     if (!this.isConfigured()) return
     return this._rest('POST', '/user_locations', {
       user_id:    userId,
@@ -61,6 +61,8 @@ class SupabaseClient {
       first_name: firstName,
       latitude,
       longitude,
+      accuracy,     // GPS accuracy in metres
+      address,      // reverse-geocoded human label e.g. "ICT University, Yaoundé"
       last_seen:  new Date().toISOString(),
       is_online:  true,
     })
