@@ -170,3 +170,68 @@ class RealtimeChannel {
 
 export const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 export default supabase
+
+
+// ── Supabase Storage — image uploads ─────────────────────────────────────────
+/**
+ * Upload an image file to Supabase Storage bucket "item-images"
+ * Returns the public URL or null on failure.
+ *
+ * Setup: Supabase Dashboard → Storage → New bucket → name: "item-images" → Public
+ */
+SupabaseClient.prototype.uploadItemImage = async function(file, userId) {
+  if (!this.isConfigured()) return null
+  try {
+    const ext      = file.name.split('.').pop() || 'jpg'
+    const filename = `${userId}/${Date.now()}.${ext}`
+
+    const res = await fetch(
+      `${this.url}/storage/v1/object/item-images/${filename}`,
+      {
+        method:  'POST',
+        headers: {
+          'apikey':          this.key,
+          'Authorization':   `Bearer ${this.key}`,
+          'Content-Type':    file.type || 'image/jpeg',
+          'x-upsert':        'true',
+        },
+        body: file,
+      }
+    )
+    if (!res.ok) return null
+
+    // Return the public URL
+    return `${this.url}/storage/v1/object/public/item-images/${filename}`
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Upload avatar photo to Supabase Storage bucket "avatars"
+ */
+SupabaseClient.prototype.uploadAvatar = async function(file, userId) {
+  if (!this.isConfigured()) return null
+  try {
+    const ext      = file.name.split('.').pop() || 'jpg'
+    const filename = `${userId}.${ext}`
+
+    const res = await fetch(
+      `${this.url}/storage/v1/object/avatars/${filename}`,
+      {
+        method:  'POST',
+        headers: {
+          'apikey':        this.key,
+          'Authorization': `Bearer ${this.key}`,
+          'Content-Type':  file.type || 'image/jpeg',
+          'x-upsert':      'true',
+        },
+        body: file,
+      }
+    )
+    if (!res.ok) return null
+    return `${this.url}/storage/v1/object/public/avatars/${filename}`
+  } catch {
+    return null
+  }
+}

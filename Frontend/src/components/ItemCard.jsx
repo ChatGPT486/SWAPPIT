@@ -80,9 +80,12 @@ export default function ItemCard({ item, showActions = false, onSwap, compact = 
           <Chip bg={cStyle.bg} color={cStyle.color}>{item.condition}</Chip>
         </div>
 
-        {/* Owner row — only shown when we have owner data */}
+        {/* Owner row — clickable link to their public profile */}
         {!compact && owner && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 12, borderTop: '1px solid var(--border)', marginTop: 10 }}>
+          <Link to={isOwn ? '/my-space' : `/user/${owner.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 12, borderTop: '1px solid var(--border)', marginTop: 10, textDecoration: 'none', transition: 'opacity 0.2s' }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.75'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+          >
             <div style={{
               width: 26, height: 26, borderRadius: '50%',
               background: 'var(--ink)', color: 'var(--lime)',
@@ -101,7 +104,8 @@ export default function ItemCard({ item, showActions = false, onSwap, compact = 
               </div>
               {owner.stars > 0 && <StarRating value={Number(owner.stars)} size={10} />}
             </div>
-          </div>
+            {!isOwn && <span style={{ fontSize: 9, color: 'var(--muted)', flexShrink: 0 }}>View →</span>}
+          </Link>
         )}
 
         {showActions && isAvailable && !isOwn && (
