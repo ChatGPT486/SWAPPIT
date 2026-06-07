@@ -7,9 +7,9 @@
 
 ## 📸 Screenshot
 <!-- Drag and drop a screenshot of your app here after uploading -->
-<img width="1909" height="954" alt="image" src="https://github.com/user-attachments/assets/4650c94f-3b40-43db-89b4-5a23fd1af0e5" />
 
----
+---<img width="1910" height="954" alt="Screenshot 2026-06-07 120109" src="https://github.com/user-attachments/assets/5048f630-1672-4461-94d3-ee9f50b54952" />
+
 
 ## 🚀 What is Swappit?
 Swappit allows registered users to post items they no longer need
