@@ -1,0 +1,12 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SWAPPIT FRONTEND — Environment Variables
+# Copy to .env and fill with your real Supabase values
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Django backend URL (for API calls)
+VITE_API_BASE_URL=/api
+
+# Supabase (for Realtime location tracking)
+# Find in: Supabase Dashboard → Settings → API
+VITE_SUPABASE_URL=https://[YOUR-PROJECT-REF].supabase.co
+VITE_SUPABASE_ANON_KEY=[YOUR-ANON-PUBLIC-KEY]
