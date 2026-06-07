@@ -44,7 +44,7 @@ const DEFAULT_ZOOM    = 6
 
 export default function LiveMap({ compact = false }) {
   const { currentUser } = useApp()
-  const { granted, myCoords, error: locationError } = useLocationTracking(currentUser)
+  const { granted, myCoords, address: myAddress, error: locationError } = useLocationTracking(currentUser)
 
   const mapRef        = useRef(null)   // Leaflet map instance
   const containerRef  = useRef(null)   // DOM div
@@ -325,12 +325,16 @@ export default function LiveMap({ compact = false }) {
 
           {/* My location button */}
           {granted === true && myCoords && (
-            <button onClick={flyToMe} style={{ padding: '6px 12px', borderRadius: 10, background: 'rgba(200,242,48,0.12)', color: 'var(--lime)', border: '1px solid rgba(200,242,48,0.25)', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 5 }}
+            <button onClick={flyToMe} style={{ padding: '6px 12px', borderRadius: 10, background: 'rgba(200,242,48,0.12)', color: 'var(--lime)', border: '1px solid rgba(200,242,48,0.25)', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 5, maxWidth: 220, overflow: 'hidden' }}
               onMouseEnter={e => { e.currentTarget.style.background='rgba(200,242,48,0.22)' }}
               onMouseLeave={e => { e.currentTarget.style.background='rgba(200,242,48,0.12)' }}
+              title={myAddress?.full || 'My location'}
             >
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--lime)', display: 'inline-block', boxShadow: '0 0 6px var(--lime)' }} />
-              Me
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--lime)', flexShrink: 0, display: 'inline-block', boxShadow: '0 0 6px var(--lime)' }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {myAddress?.display ? myAddress.display.split(',')[0] : 'Me'}
+              </span>
+              {myCoords.accuracy && <span style={{ fontSize: 9, opacity: 0.6, flexShrink: 0 }}>±{Math.round(myCoords.accuracy)}m</span>}
             </button>
           )}
 
@@ -416,8 +420,10 @@ export default function LiveMap({ compact = false }) {
                     <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 12, color: isMe ? 'var(--lime)' : '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {name}
                     </div>
-                    <div style={{ fontSize: 10, color: 'rgba(245,244,240,0.3)', marginTop: 1 }}>
-                      {user.latitude ? `${user.latitude.toFixed(2)}°N` : 'No location'}
+                    <div style={{ fontSize: 10, color: 'rgba(245,244,240,0.35)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {user.address
+                        ? user.address.split(',')[0]
+                        : user.latitude ? `${user.latitude.toFixed(4)}°N` : 'No location'}
                     </div>
                   </div>
                 </button>
