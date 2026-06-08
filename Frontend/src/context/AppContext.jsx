@@ -174,7 +174,7 @@ export function AppProvider({ children }) {
         const formData = new FormData()
         formData.append('image', itemData.imageFile)
         const res = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/upload-image`,
+          `${import.meta.env.VITE_API_BASE_URL || '/api'}/upload-image`,
           {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${tokens.getAccess()}` },

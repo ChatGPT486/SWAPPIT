@@ -1,33 +1,23 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# SWAPPIT BACKEND — Environment Variables
-# Copy this file, fill in your real values from Supabase dashboard
+# SWAPPIT BACKEND — .env  (copy this content into Backend/.env)
 # ─────────────────────────────────────────────────────────────────────────────
 
 SECRET_KEY=django-insecure-swappit-CHANGE-THIS-IN-PRODUCTION-abc123xyz789
 DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1,.vercel.app,.railway.app,.render.com
 
-# ── OPTION A: Full Supabase connection URL (easier) ───────────────────────────
-# Find in: Supabase Dashboard → Settings → Database → Connection string → URI
-# Use the "Transaction" pooler URL for serverless / the "Session" URL for Django
-SUPABASE_DB_URL=postgresql://postgres.[YOUR-PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres
+# ── ALLOWED HOSTS — add your live domain here ─────────────────────────────────
+ALLOWED_HOSTS=localhost,127.0.0.1,.vercel.app,.railway.app,.render.com,swappit.duckdns.org,www.swappit.duckdns.org
 
-# ── OPTION B: Individual fields (if you prefer) ───────────────────────────────
-# Find in: Supabase Dashboard → Settings → Database → Connection parameters
-# (Leave these blank if using SUPABASE_DB_URL above)
-DB_NAME=postgres
-DB_USER=postgres.[YOUR-PROJECT-REF]
-DB_PASSWORD=[YOUR-DATABASE-PASSWORD]
-DB_HOST=aws-0-[REGION].pooler.supabase.com
-DB_PORT=6543
+# ── DATABASE (Supabase PostgreSQL) ────────────────────────────────────────────
+# Fill in your real Supabase connection URL below:
+SUPABASE_DB_URL=postgresql://postgres:[pMNqPD0ZIO60E8Ln]@db.azdmdyrevlqbdpqpjuxj.supabase.co:5432/postgres
 
-# ── Supabase project keys (used by the React frontend for Realtime) ───────────
-# Find in: Supabase Dashboard → Settings → API
+# ── Supabase keys (for Realtime map feature) ─────────────────────────────────
 SUPABASE_URL=https://azdmdyrevlqbdpqpjuxj.supabase.co
-SUPABASE_ANON_KEY=[eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6ZG1keXJldmxxYmRwcXBqdXhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3ODA5NDEsImV4cCI6MjA5NjM1Njk0MX0.kZt6yrJIqBnO_2FmcmibF26slEGEAKCh0PH-AWn52bA]
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6ZG1keXJldmxxYmRwcXBqdXhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3ODA5NDEsImV4cCI6MjA5NjM1Njk0MX0.kZt6yrJIqBnO_2FmcmibF26slEGEAKCh0PH-AWn52bA
 
-# ── CORS ──────────────────────────────────────────────────────────────────────
-CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+# ── CORS — allow your live frontend domain ────────────────────────────────────
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,https://swappit.duckdns.org,http://swappit.duckdns.org
 
 # ── JWT ───────────────────────────────────────────────────────────────────────
 JWT_ACCESS_TOKEN_LIFETIME_MINUTES=60

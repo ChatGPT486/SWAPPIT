@@ -179,7 +179,7 @@ function ProfileTab({ user, onUpdate, onToast, getUserReviews, getUserById }) {
         const formData = new FormData()
         formData.append('image', file)
         const res = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/upload-image`,
+          `${import.meta.env.VITE_API_BASE_URL || '/api'}/upload-image`,
           { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('swappit_access')}` }, body: formData }
         )
         if (res.ok) {
