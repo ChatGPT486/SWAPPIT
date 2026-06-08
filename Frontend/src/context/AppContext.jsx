@@ -166,15 +166,34 @@ export function AppProvider({ children }) {
 
   // ── Items ──────────────────────────────────────────────────────────────────
   const addItem = async (itemData) => {
-    // Step 1: Upload image to Supabase Storage if a real File was provided
+    // Step 1: Upload image — try Django first, then Supabase, then base64 fallback
     let imageUrl = ''
     if (itemData.imageFile instanceof File) {
-      if (supabase.isConfigured()) {
+      try {
+        // Primary: upload directly to Django backend (no external service needed)
+        const formData = new FormData()
+        formData.append('image', itemData.imageFile)
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/upload-image`,
+          {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${tokens.getAccess()}` },
+            body: formData,
+          }
+        )
+        if (res.ok) {
+          const data = await res.json()
+          imageUrl = data.url || ''
+        }
+      } catch {}
+
+      // Secondary: Supabase Storage if Django upload failed
+      if (!imageUrl && supabase.isConfigured()) {
         const url = await supabase.uploadItemImage(itemData.imageFile, currentUser?.id)
         if (url) imageUrl = url
       }
-      // Fallback: if Supabase not configured, convert to base64 Data URL
-      // so the image still shows up in the app (stored in Django)
+
+      // Last resort: base64 Data URL so image always shows
       if (!imageUrl) {
         imageUrl = await new Promise((resolve) => {
           const reader = new FileReader()

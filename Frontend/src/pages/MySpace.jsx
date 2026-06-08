@@ -168,30 +168,37 @@ function ProfileTab({ user, onUpdate, onToast, getUserReviews, getUserById }) {
     const file = e.target.files[0]
     if (!file) return
 
-    // Show local preview immediately so user sees feedback right away
-    const localPreview = URL.createObjectURL(file)
-    onUpdate({ photo: localPreview })
+    // Show local preview immediately for instant feedback
+    onUpdate({ photo: URL.createObjectURL(file) })
 
     try {
       let permanentUrl = null
-      if (supabase.isConfigured()) {
-        // Upload to Supabase Storage "avatars" bucket for a permanent URL
+
+      // Primary: upload to Django backend directly
+      try {
+        const formData = new FormData()
+        formData.append('image', file)
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/upload-image`,
+          { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('swappit_access')}` }, body: formData }
+        )
+        if (res.ok) {
+          const data = await res.json()
+          permanentUrl = data.url || null
+        }
+      } catch {}
+
+      // Secondary: Supabase if Django upload failed
+      if (!permanentUrl && supabase.isConfigured()) {
         permanentUrl = await supabase.uploadAvatar(file, user?.id)
       }
-      if (!permanentUrl) {
-        // Supabase not configured — convert to base64 Data URL so Django can store it
-        const reader = new FileReader()
-        reader.onload = (ev) => {
-          onUpdate({ photo: ev.target.result })
-          onToast({ message: 'Profile photo updated!', type: 'success' })
-        }
-        reader.readAsDataURL(file)
-      } else {
+
+      if (permanentUrl) {
         onUpdate({ photo: permanentUrl })
-        onToast({ message: 'Profile photo updated!', type: 'success' })
       }
+      onToast({ message: 'Profile photo updated!', type: 'success' })
     } catch {
-      // local blob preview already shown — silently ignore upload errors
+      onToast({ message: 'Photo saved locally (reconnect to persist).', type: 'success' })
     }
   }
 
