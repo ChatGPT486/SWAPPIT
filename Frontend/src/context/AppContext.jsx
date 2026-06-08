@@ -98,7 +98,7 @@ export function AppProvider({ children }) {
     try {
       const [allUsers, allItems, myItemsData, myExchanges, notifs, unread] = await Promise.all([
         api.getUsers(),
-        api.getItems({ exclude_own: true }),
+        api.getItems({}),           // fetch ALL items — Explorer filters are done in the UI
         api.getMyItems(),
         api.getExchanges(),
         api.getNotifications(),
@@ -155,7 +155,7 @@ export function AppProvider({ children }) {
     if (changes.lastName   !== undefined) payload.last_name  = changes.lastName
     if (changes.bio        !== undefined) payload.bio        = changes.bio
     if (changes.contact    !== undefined) payload.contact    = changes.contact
-    if (changes.photo      !== undefined) payload.photo      = changes.photo
+    if (changes.photo      !== undefined) payload.avatar     = changes.photo  // Django field is "avatar"
     // Pass through any already-snake_case keys
     Object.keys(changes).forEach(k => { if (!payload[k]) payload[k] = changes[k] })
     const updated = await api.updateMe(payload)
@@ -202,7 +202,7 @@ export function AppProvider({ children }) {
     // Step 4: CRITICAL — refresh the Explorer items list so others can see it
     // We re-fetch all items (excluding own) to update the Explorer grid
     try {
-      const allItems = await api.getItems({ exclude_own: true })
+      const allItems = await api.getItems({})
       setItems(unwrap(allItems).map(normalizeItem))
     } catch (e) {
       console.warn('Could not refresh explorer items:', e)
@@ -219,7 +219,7 @@ export function AppProvider({ children }) {
 
   const refreshItems = async () => {
     const [all, mine] = await Promise.all([
-      api.getItems({ exclude_own: true }),
+      api.getItems({}),
       api.getMyItems(),
     ])
     setItems(unwrap(all).map(normalizeItem))

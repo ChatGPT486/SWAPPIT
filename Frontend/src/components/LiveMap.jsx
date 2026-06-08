@@ -238,47 +238,90 @@ export default function LiveMap({ compact = false }) {
     }
   }, [loaded, onlineUsers, updateMarkers])
 
-  // ── Fly to my location when granted and keep following as I move ──────────
+  const myMarkerRef = useRef(null)   // dedicated marker for current user
+
+  // ── Add/update the "Me" marker whenever myCoords changes ──────────────────
   useEffect(() => {
-    if (!mapRef.current || !myCoords || !loaded) return
-    mapRef.current.flyTo([myCoords.latitude, myCoords.longitude], 15, { duration: 1.5 })
+    if (!mapRef.current || !loaded || !myCoords) return
+    const L   = window.L
+    const map = mapRef.current
+    const { latitude, longitude, accuracy } = myCoords
+
+    const size = 44
+    const iconHtml = `
+      <div style="position:relative;width:${size}px;height:${size + 12}px;display:flex;flex-direction:column;align-items:center;">
+        <div style="position:absolute;top:50%;left:50%;width:${size + 18}px;height:${size + 18}px;border-radius:50%;background:rgba(200,242,48,0.25);transform:translate(-50%,-54%);animation:livemap-pulse 2s ease infinite;pointer-events:none;"></div>
+        <div style="width:${size}px;height:${size}px;border-radius:50%;background:#c8f230;color:#0c0c10;font-family:system-ui,sans-serif;font-weight:800;font-size:${Math.round(size * 0.35)}px;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 0 0 4px rgba(200,242,48,0.35),0 4px 20px rgba(0,0,0,0.4);position:relative;z-index:1;">📍</div>
+        <div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:12px solid #c8f230;margin-top:-2px;"></div>
+      </div>
+    `
+    const icon = L.divIcon({ html: iconHtml, className: '', iconSize: [size, size + 12], iconAnchor: [size / 2, size + 12], popupAnchor: [0, -(size + 14)] })
+
+    const popupContent = `
+      <div style="font-family:system-ui,sans-serif;min-width:160px;">
+        <div style="font-weight:800;font-size:14px;color:#0c0c10;margin-bottom:4px;">📍 You <span style="font-size:10px;color:#059669;font-weight:600;">· Live</span></div>
+        <div style="font-size:11px;color:#7c7b82;margin-bottom:2px;">${latitude.toFixed(6)}°N, ${longitude.toFixed(6)}°E</div>
+        ${accuracy ? `<div style="font-size:11px;color:#7c7b82;">Accuracy: ±${Math.round(accuracy)}m</div>` : ''}
+      </div>
+    `
+
+    if (myMarkerRef.current) {
+      myMarkerRef.current.setLatLng([latitude, longitude]).setIcon(icon).getPopup()?.setContent(popupContent)
+    } else {
+      myMarkerRef.current = L.marker([latitude, longitude], { icon, zIndexOffset: 2000 })
+        .addTo(map)
+        .bindPopup(popupContent, { closeButton: false, maxWidth: 220 })
+    }
   }, [myCoords, loaded])
 
-  // ── Also set up a dedicated watchPosition on the map itself ────────────────
-  // This keeps the map following the user even if Supabase isn't configured.
+  // ── Fly to my exact location on first GPS fix ─────────────────────────────
+  const hasFlewToMe = useRef(false)
+  useEffect(() => {
+    if (!mapRef.current || !myCoords || !loaded || hasFlewToMe.current) return
+    hasFlewToMe.current = true
+    mapRef.current.flyTo([myCoords.latitude, myCoords.longitude], 16, { duration: 2.0 })
+  }, [myCoords, loaded])
+
+  // ── Continuously pan map as user moves (without resetting zoom) ────────────
   const mapWatchRef = useRef(null)
+  const followMe    = useRef(true)   // stop following if user manually pans
+
   useEffect(() => {
     if (!loaded) return
     if (!navigator.geolocation) return
 
-    const opts = { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+    const opts = { enableHighAccuracy: true, timeout: 15000, maximumAge: 3000 }
 
     mapWatchRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords
-        if (mapRef.current) {
-          // Smoothly pan to new position (don't zoom-jump if user manually zoomed)
-          mapRef.current.panTo([latitude, longitude], { animate: true, duration: 1.0 })
+        if (mapRef.current && followMe.current) {
+          mapRef.current.panTo([latitude, longitude], { animate: true, duration: 0.8 })
         }
       },
-      () => { /* ignore errors */ },
+      () => {},
       opts
     )
 
+    // Stop auto-follow if user manually drags the map
+    const stopFollow = () => { followMe.current = false }
+    // Re-enable follow when "Me" button is clicked
+    const startFollow = () => { followMe.current = true }
+    if (mapRef.current) {
+      mapRef.current.on('dragstart', stopFollow)
+    }
+
     return () => {
-      if (mapWatchRef.current != null) {
-        navigator.geolocation.clearWatch(mapWatchRef.current)
-      }
+      if (mapWatchRef.current != null) navigator.geolocation.clearWatch(mapWatchRef.current)
     }
   }, [loaded])
-
-  // ── Cleanup ────────────────────────────────────────────────────────────────
   useEffect(() => {
     return () => {
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null
         markersRef.current = {}
+        myMarkerRef.current = null
       }
     }
   }, [])
@@ -296,7 +339,8 @@ export default function LiveMap({ compact = false }) {
 
   const flyToMe = () => {
     if (!mapRef.current || !myCoords) return
-    mapRef.current.flyTo([myCoords.latitude, myCoords.longitude], 15, { duration: 1.2 })
+    followMe.current = true
+    mapRef.current.flyTo([myCoords.latitude, myCoords.longitude], 16, { duration: 1.2 })
   }
 
   const resetView = () => {
