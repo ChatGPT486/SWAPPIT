@@ -7,7 +7,9 @@ import Explorer   from './pages/Explorer'
 import MySpace    from './pages/MySpace'
 import ItemDetail from './pages/ItemDetail'
 import About      from './pages/About'
+import UserProfile from './pages/UserProfile'
 import ProtectedRoute from './components/ProtectedRoute'
+
 
 export default function App() {
   return (
