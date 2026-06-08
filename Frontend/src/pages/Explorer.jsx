@@ -26,8 +26,6 @@ export default function Explorer() {
 
   const filtered = items
     .filter(item => {
-      const ownerId = item.owner?.id ?? item.owner_id ?? item.userId
-      if (ownerId === currentUser?.id) return false
       const available = item.available !== false && item.isAvailable !== false
       if (!available) return false
       const ms = search
@@ -152,11 +150,15 @@ export default function Explorer() {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(252px, 1fr))', gap: 18 }}>
-            {filtered.map((item, i) => (
-              <div key={item.id} className="reveal" style={{ transitionDelay: `${i * 35}ms` }}>
-                <ItemCard item={item} showActions onSwap={setSwapTarget} />
-              </div>
-            ))}
+            {filtered.map((item, i) => {
+              const ownerId = item.owner?.id ?? item.owner_id ?? item.userId
+              const isOwn   = ownerId === currentUser?.id
+              return (
+                <div key={item.id} className="reveal" style={{ transitionDelay: `${i * 35}ms` }}>
+                  <ItemCard item={item} showActions={!isOwn} isOwn={isOwn} onSwap={isOwn ? null : setSwapTarget} />
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

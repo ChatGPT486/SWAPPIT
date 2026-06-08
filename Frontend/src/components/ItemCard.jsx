@@ -2,14 +2,15 @@ import { Link } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import StarRating from './StarRating'
 
-export default function ItemCard({ item, showActions = false, onSwap, compact = false }) {
+export default function ItemCard({ item, showActions = false, onSwap, compact = false, isOwn: isOwnProp }) {
   const { currentUser } = useApp()
 
   // FIX: Django API returns item.owner as a nested object {id, first_name, last_name, ...}
   // Old code used item.userId and getUserById() — those don't exist with the real API
   const owner = item.owner && typeof item.owner === 'object' ? item.owner : null
   const ownerId = owner?.id ?? item.owner_id ?? item.userId ?? null
-  const isOwn   = currentUser?.id === ownerId
+  // Allow parent to override (Explorer passes isOwn directly to avoid re-computing)
+  const isOwn   = isOwnProp !== undefined ? isOwnProp : (currentUser?.id === ownerId)
 
   // FIX: Django uses snake_case — handle both naming conventions
   const ownerFirstName = owner?.first_name || owner?.firstName || ''
@@ -59,6 +60,16 @@ export default function ItemCard({ item, showActions = false, onSwap, compact = 
           padding: '4px 12px', borderRadius: 'var(--radius-pill)',
           fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-display)', letterSpacing: '0.04em',
         }}>SWAPPED ✓</div>
+      )}
+
+      {isAvailable && isOwn && (
+        <div style={{
+          position: 'absolute', top: 10, left: 10,
+          background: 'rgba(12,12,16,0.82)', color: 'var(--lime)',
+          padding: '4px 12px', borderRadius: 'var(--radius-pill)',
+          fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-display)', letterSpacing: '0.04em',
+          backdropFilter: 'blur(4px)',
+        }}>Your Item</div>
       )}
 
       <div style={{ padding: compact ? '12px 14px' : '14px 18px' }}>
