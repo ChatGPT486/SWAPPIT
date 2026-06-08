@@ -105,6 +105,22 @@ export default function LiveMap({ compact = false }) {
     L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map)
 
     mapRef.current = map
+
+    // ── Immediately try to get the user's real GPS location ──
+    // This runs independently of Supabase so the map centers correctly
+    // even when Supabase is not configured.
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords
+          if (mapRef.current) {
+            mapRef.current.flyTo([latitude, longitude], 15, { duration: 1.8 })
+          }
+        },
+        () => { /* permission denied or unavailable — stay on Cameroon center */ },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
+      )
+    }
   }, [loaded])
 
   // ── Switch tile layer when mapMode changes ─────────────────────────────────
@@ -222,11 +238,39 @@ export default function LiveMap({ compact = false }) {
     }
   }, [loaded, onlineUsers, updateMarkers])
 
-  // ── Fly to my location when granted ───────────────────────────────────────
+  // ── Fly to my location when granted and keep following as I move ──────────
   useEffect(() => {
     if (!mapRef.current || !myCoords || !loaded) return
-    mapRef.current.flyTo([myCoords.latitude, myCoords.longitude], 13, { duration: 1.5 })
+    mapRef.current.flyTo([myCoords.latitude, myCoords.longitude], 15, { duration: 1.5 })
   }, [myCoords, loaded])
+
+  // ── Also set up a dedicated watchPosition on the map itself ────────────────
+  // This keeps the map following the user even if Supabase isn't configured.
+  const mapWatchRef = useRef(null)
+  useEffect(() => {
+    if (!loaded) return
+    if (!navigator.geolocation) return
+
+    const opts = { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+
+    mapWatchRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords
+        if (mapRef.current) {
+          // Smoothly pan to new position (don't zoom-jump if user manually zoomed)
+          mapRef.current.panTo([latitude, longitude], { animate: true, duration: 1.0 })
+        }
+      },
+      () => { /* ignore errors */ },
+      opts
+    )
+
+    return () => {
+      if (mapWatchRef.current != null) {
+        navigator.geolocation.clearWatch(mapWatchRef.current)
+      }
+    }
+  }, [loaded])
 
   // ── Cleanup ────────────────────────────────────────────────────────────────
   useEffect(() => {

@@ -168,9 +168,21 @@ export function AppProvider({ children }) {
   const addItem = async (itemData) => {
     // Step 1: Upload image to Supabase Storage if a real File was provided
     let imageUrl = ''
-    if (itemData.imageFile instanceof File && supabase.isConfigured()) {
-      const url = await supabase.uploadItemImage(itemData.imageFile, currentUser?.id)
-      if (url) imageUrl = url
+    if (itemData.imageFile instanceof File) {
+      if (supabase.isConfigured()) {
+        const url = await supabase.uploadItemImage(itemData.imageFile, currentUser?.id)
+        if (url) imageUrl = url
+      }
+      // Fallback: if Supabase not configured, convert to base64 Data URL
+      // so the image still shows up in the app (stored in Django)
+      if (!imageUrl) {
+        imageUrl = await new Promise((resolve) => {
+          const reader = new FileReader()
+          reader.onload = (e) => resolve(e.target.result)
+          reader.onerror = () => resolve('')
+          reader.readAsDataURL(itemData.imageFile)
+        })
+      }
     }
 
     // Step 2: Create item in Django — send public image URL (string)

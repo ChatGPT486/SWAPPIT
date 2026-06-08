@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import supabase from '../lib/supabase'
 import Navbar from '../components/Navbar'
 import ItemCard from '../components/ItemCard'
 import Toast from '../components/Toast'
@@ -163,9 +164,35 @@ function ProfileTab({ user, onUpdate, onToast, getUserReviews, getUserById }) {
     onToast({ message: 'Profile updated!', type: 'success' })
   }
 
-  const handlePhotoChange = (e) => {
+  const handlePhotoChange = async (e) => {
     const file = e.target.files[0]
-    if (file) onUpdate({ photo: URL.createObjectURL(file) })
+    if (!file) return
+
+    // Show local preview immediately so user sees feedback right away
+    const localPreview = URL.createObjectURL(file)
+    onUpdate({ photo: localPreview })
+
+    try {
+      let permanentUrl = null
+      if (supabase.isConfigured()) {
+        // Upload to Supabase Storage "avatars" bucket for a permanent URL
+        permanentUrl = await supabase.uploadAvatar(file, user?.id)
+      }
+      if (!permanentUrl) {
+        // Supabase not configured — convert to base64 Data URL so Django can store it
+        const reader = new FileReader()
+        reader.onload = (ev) => {
+          onUpdate({ photo: ev.target.result })
+          onToast({ message: 'Profile photo updated!', type: 'success' })
+        }
+        reader.readAsDataURL(file)
+      } else {
+        onUpdate({ photo: permanentUrl })
+        onToast({ message: 'Profile photo updated!', type: 'success' })
+      }
+    } catch {
+      // local blob preview already shown — silently ignore upload errors
+    }
   }
 
   const firstName = user?.firstName || user?.first_name || ''
