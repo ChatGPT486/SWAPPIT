@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY    = config('SECRET_KEY', default='django-insecure-swappit-dev-2026')
 DEBUG         = config('DEBUG', default=True, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,.vercel.app,.railway.app,.render.com').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,.vercel.app,.railway.app,.render.com,.duckdns.org').split(',')
 
 DJANGO_APPS = [
     'django.contrib.admin',
@@ -115,8 +115,8 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME':    timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME':   timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME':    timedelta(hours=12),   # was 60min — longer session, fewer refreshes
+    'REFRESH_TOKEN_LIFETIME':   timedelta(days=30),    # was 7 days — stay logged in for a month
     'ROTATE_REFRESH_TOKENS':    True,
     'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES':        ('Bearer',),
@@ -130,6 +130,9 @@ SUPABASE_ANON_KEY = config('SUPABASE_ANON_KEY', default='')
 # CORS — allow React frontend
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:5173,http://localhost:3000'
+    default='http://localhost:5173,http://localhost:3000,https://swappit.duckdns.org,http://swappit.duckdns.org'
 ).split(',')
 CORS_ALLOW_CREDENTIALS = True
+# Allow all origins in DEBUG mode so local dev always works
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
