@@ -154,7 +154,7 @@ export default function Explorer() {
               const ownerId = item.owner?.id ?? item.owner_id ?? item.userId
               const isOwn   = ownerId === currentUser?.id
               return (
-                <div key={item.id} className="reveal" style={{ transitionDelay: `${i * 35}ms` }}>
+                <div key={item.id}  className="reveal revealed" style={{ transitionDelay: `${i * 35}ms` }}>
                   <ItemCard item={item} showActions={!isOwn} isOwn={isOwn} onSwap={isOwn ? null : setSwapTarget} />
                 </div>
               )
