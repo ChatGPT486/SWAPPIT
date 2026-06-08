@@ -38,8 +38,8 @@ export default function ItemCard({ item, showActions = false, onSwap, compact = 
         ) : (
           <div className="item-image" style={{
             height: compact ? 148 : 184,
-            background: 'linear-gradient(145deg, var(--surface) 0%, var(--surface-2) 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+           background: '#ffffff',
+boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
             fontSize: compact ? 48 : 64,
           }}>{item.emoji || '📦'}</div>
         )}
