@@ -5,7 +5,7 @@ import App from './App.jsx'
 
 function Boot() {
   useEffect(() => {
-    // Reveal on scroll (find elements with .reveal)
+  const observe = () => {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(e => {
         if (e.isIntersecting) {
@@ -14,11 +14,25 @@ function Boot() {
         }
       })
     }, { threshold: 0.12 })
+    document.querySelectorAll('.reveal:not(.revealed)').forEach(el => observer.observe(el))
+    return observer
+  }
 
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el))
+  let observer = observe()
 
-    return () => observer.disconnect()
-  }, [])
+  // Re-observe when new elements are added to the DOM
+  const mutationObserver = new MutationObserver(() => {
+    observer.disconnect()
+    observer = observe()
+  })
+
+  mutationObserver.observe(document.body, { childList: true, subtree: true })
+
+  return () => {
+    observer.disconnect()
+    mutationObserver.disconnect()
+  }
+}, [])
 
   return <App />
 }
