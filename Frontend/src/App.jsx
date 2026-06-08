@@ -9,6 +9,7 @@ import ItemDetail from './pages/ItemDetail'
 import About      from './pages/About'
 import UserProfile from './pages/UserProfile'
 import ProtectedRoute from './components/ProtectedRoute'
+import UserProfile from './pages/UserProfile'
 
 
 export default function App() {
